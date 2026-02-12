@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Penny Auction: A Great Depression Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+        
+        body {
+            background-color: #2c2c2c;
+            color: #e5e7eb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .typewriter {
+            font-family: 'Special Elite', cursive;
+        }
+
+        .paper-bg {
+            background-color: #f4f1ea;
+            color: #2d2d2d;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .btn-choice {
+            transition: all 0.2s ease;
+            border: 2px solid #4a4a4a;
+        }
+
+        .btn-choice:hover {
+            background-color: #3b3b3b;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .stat-card {
+            background: rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="game-container" class="max-w-3xl w-full paper-bg rounded-lg p-8 md:p-12 min-h-[600px] flex flex-col">
+        <!-- Header -->
+        <div class="mb-8 border-b-2 border-gray-400 pb-4 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold typewriter uppercase tracking-widest">The Penny Auction</h1>
+                <p class="text-sm italic italic text-gray-600">January 1933 — Iowa, USA</p>
+            </div>
+            <div id="stats" class="hidden text-right">
+                <div class="text-xs uppercase font-bold text-gray-500">Community Solidarity</div>
+                <div id="score-display" class="text-2xl font-bold text-red-800">0%</div>
+            </div>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div id="content" class="flex-grow flex flex-col">
+            <!-- Start Screen -->
+            <div id="start-screen" class="space-y-6">
+                <p class="text-lg leading-relaxed">
+                    The Great Depression has hit the heartland hard. Crop prices have plummeted, and the banks are coming for the land. Your neighbor, Silas Thorne, has received a foreclosure notice. 
+                </p>
+                <p class="text-lg leading-relaxed">
+                    If the bank auctions off his equipment and livestock today, his family will be homeless. You and the local farmers have organized a <strong>"Penny Auction."</strong> 
+                </p>
+                <div class="bg-gray-200 p-4 border-l-4 border-red-800 italic">
+                    "Your goal: Intimidate the bank agents, keep the bids low, and ensure Silas keeps his farm. Every choice affects your <strong>Solidarity Score</strong>."
+                </div>
+                <button onclick="startGame()" class="mt-8 w-full bg-red-900 text-white py-4 rounded font-bold hover:bg-red-800 transition">BEGIN THE AUCTION</button>
+            </div>
+
+            <!-- Scenario Screen (Hidden by default) -->
+            <div id="scenario-screen" class="hidden fade-in flex-grow flex flex-col">
+                <div id="scenario-text" class="text-xl mb-8 leading-relaxed font-medium"></div>
+                <div id="choices" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
+                    <!-- Choices injected here -->
+                </div>
+            </div>
+
+            <!-- Result Feedback (Hidden by default) -->
+            <div id="feedback-screen" class="hidden fade-in space-y-6">
+                <div id="feedback-title" class="text-2xl font-bold"></div>
+                <p id="feedback-text" class="text-lg"></p>
+                <button onclick="nextScenario()" class="w-full bg-gray-800 text-white py-3 rounded font-bold hover:bg-black transition">CONTINUE</button>
+            </div>
+
+            <!-- Final Score Screen -->
+            <div id="end-screen" class="hidden fade-in text-center space-y-6">
+                <h2 class="text-4xl font-bold typewriter">AUCTION CLOSED</h2>
+                <div id="final-rank" class="text-2xl font-bold text-red-900 mb-4"></div>
+                <p id="final-description" class="text-lg mb-8"></p>
+                <button onclick="location.reload()" class="inline-block px-8 py-3 border-2 border-gray-800 rounded font-bold hover:bg-gray-800 hover:text-white transition">TRY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scenarios = [
+            {
+                text: "The bank agent arrives with a local sheriff. They look nervous as they see fifty farmers standing silently with pitchforks and heavy clubs. How do you set the tone?",
+                choices: [
+                    { text: "Greet them politely and tell everyone to put their tools away.", impact: -20, feedback: "Negative: By showing weakness, you allow the bank agent to take control. Outside buyers feel safe enough to outbid the neighbors." },
+                    { text: "Form a 'gauntlet' that the agent must walk through to get to the porch.", impact: 20, feedback: "Positive: This is classic solidarity. The physical intimidation reminds the agent that he is an outsider in this community." },
+                    { text: "Loudly whisper 'There's a rope waiting for anyone who bids over a nickel.'", impact: 20, feedback: "Positive: While extreme, these threats were common. It ensures that no 'outsiders' dare to bid against the community." },
+                    { text: "Stay home and write a letter to the newspaper instead.", impact: -20, feedback: "Negative: Letters don't stop auctions. Silas needs boots on the ground, not ink on paper." }
+                ]
+            },
+            {
+                text: "The agent puts Silas's prize workhorse up for bid. It's worth at least $150. A stranger in a suit steps forward to look at the horse's teeth.",
+                choices: [
+                    { text: "Bid $100 immediately to show the horse's true value.", impact: -20, feedback: "Negative: You just gave the bank $100! The goal is to keep the money in the community's pockets, not the bank's." },
+                    { text: "Crowd around the stranger and 'accidentally' step on his toes while bidding 5 cents.", impact: 20, feedback: "Positive: Physical pressure and a 'penny bid' define the tactic. The stranger realizes he isn't welcome." },
+                    { text: "Loudly bid 10 cents and glare at anyone who looks like they might raise a hand.", impact: 20, feedback: "Positive: Social pressure is your best weapon. 10 cents is a winning bid in a penny auction." },
+                    { text: "Ask the stranger if he needs a loan to help him bid higher.", impact: -20, feedback: "Negative: You are encouraging the very thing you're trying to stop. You've betrayed the neighborhood." }
+                ]
+            },
+            {
+                text: "The Sheriff tries to intervene, claiming the bids are too low and the auction isn't legal. He threatens to arrest the lead organizer.",
+                choices: [
+                    { text: "Surround the Sheriff and tell him he's 'vastly outnumbered' today.", impact: 20, feedback: "Positive: Law enforcement in the 30s often stepped back when faced with an entire town's unified front." },
+                    { text: "Offer the Sheriff a bribe of $5 to look the other way.", impact: -20, feedback: "Negative: Most farmers didn't even have $5. Bribing one official doesn't solve the systemic problem of foreclosure." },
+                    { text: "Point out that the Sheriff's own cousin is a farmer in the next county.", impact: 20, feedback: "Positive: Reminding officials of their community ties often made them 'forget' to enforce the bank's rules." },
+                    { text: "Run away before you get arrested.", impact: -20, feedback: "Negative: If the leaders flee, the community collapses. Silas loses everything." }
+                ]
+            },
+            {
+                text: "The auction moves to the farming equipment. A local tractor is being bid on. A wealthy land speculator from the city starts to raise his hand.",
+                choices: [
+                    { text: "Let him buy it; at least the bank gets paid back.", impact: -20, feedback: "Negative: The goal isn't to pay the bank—the bank is the enemy. The goal is to keep the tools on Silas's land." },
+                    { text: "Someone 'drops' a heavy wrench near his feet, and you bid a penny.", impact: 20, feedback: "Positive: Sabotage and low bids. The message is clear: 'Don't bid if you want to leave here in one piece.'" },
+                    { text: "Block his view of the auctioneer so his bid isn't seen.", impact: 20, feedback: "Positive: Simple, effective interference. If the auctioneer can't see the bid, it doesn't exist." },
+                    { text: "Ask him for a job working on the land he's about to buy.", impact: -20, feedback: "Negative: This is total surrender. You've accepted the death of the family farm." }
+                ]
+            },
+            {
+                text: "The auction is over. You and the neighbors have 'purchased' all of Silas's property for a grand total of $1.90. What do you do with the items now?",
+                choices: [
+                    { text: "Keep the items for yourself since you paid for them.", impact: -20, feedback: "Negative: This isn't a garage sale! The community's trust is broken if you profit from a neighbor's misery." },
+                    { text: "Sell the items back to the bank for a profit.", impact: -20, feedback: "Negative: This is the ultimate betrayal. You've basically worked as a middleman for the foreclosure." },
+                    { text: "Hand the bill of sale back to Silas for the price of one cent.", impact: 20, feedback: "Positive: This is the heart of the Penny Auction. You bought it to give it back. Silas is back in business." },
+                    { text: "Organize a celebratory feast using Silas's last remaining cow.", impact: -20, feedback: "Negative: Silas needs that cow to survive. Don't eat the assets you just saved!" }
+                ]
+            }
+        ];
+
+        let currentScenario = 0;
+        let score = 0;
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('stats').classList.remove('hidden');
+            document.getElementById('scenario-screen').classList.remove('hidden');
+            updateScore(0);
+            showScenario();
+        }
+
+        function updateScore(points) {
+            score += points;
+            const display = document.getElementById('score-display');
+            display.innerText = score + "%";
+            
+            if (score >= 60) display.className = "text-2xl font-bold text-green-700";
+            else if (score >= 20) display.className = "text-2xl font-bold text-yellow-600";
+            else display.className = "text-2xl font-bold text-red-800";
+        }
+
+        function showScenario() {
+            const scenario = scenarios[currentScenario];
+            document.getElementById('scenario-text').innerText = scenario.text;
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+
+            scenario.choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.className = "btn-choice p-4 text-left rounded hover:bg-gray-100 bg-white/50 font-medium";
+                btn.innerText = choice.text;
+                btn.onclick = () => handleChoice(choice);
+                choicesDiv.appendChild(btn);
+            });
+        }
+
+        function handleChoice(choice) {
+            document.getElementById('scenario-screen').classList.add('hidden');
+            document.getElementById('feedback-screen').classList.remove('hidden');
+            
+            const title = document.getElementById('feedback-title');
+            if (choice.impact > 0) {
+                title.innerText = "SUCCESSFUL TACTIC";
+                title.className = "text-2xl font-bold text-green-700";
+            } else {
+                title.innerText = "FAILED TACTIC";
+                title.className = "text-2xl font-bold text-red-700";
+            }
+            
+            document.getElementById('feedback-text').innerText = choice.feedback;
+            updateScore(choice.impact);
+        }
+
+        function nextScenario() {
+            currentScenario++;
+            document.getElementById('feedback-screen').classList.add('hidden');
+            
+            if (currentScenario < scenarios.length) {
+                document.getElementById('scenario-screen').classList.remove('hidden');
+                showScenario();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('scenario-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            
+            const rank = document.getElementById('final-rank');
+            const desc = document.getElementById('final-description');
+            
+            if (score >= 80) {
+                rank.innerText = "Community Hero";
+                desc.innerText = "Through iron-clad solidarity and tactical intimidation, you saved Silas Thorne's farm. The bank left with pennies, and the neighborhood stands stronger than ever. This was the spirit of the Farm Holiday Association!";
+            } else if (score >= 40) {
+                rank.innerText = "Struggling Neighbor";
+                desc.innerText = "You saved some of the farm, but a few items were lost to outside bidders. Silas can keep his home, but the road ahead is incredibly difficult. Solidarity is hard work.";
+            } else {
+                rank.innerText = "Bank's Best Friend";
+                desc.innerText = "By failing to stand with your neighbors, the auction went exactly as the bank wanted. Silas Thorne and his family have been evicted. In the Great Depression, silence was often a death sentence for family farms.";
+            }
+        }
+    </script>
+</body>
+</html>
